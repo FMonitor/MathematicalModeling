@@ -11,13 +11,24 @@ y_spline = interp1(x, y, x_interp, 'spline');
 
 % 绘制插值结果
 figure;
+subplot(1, 2, 1);
 plot(x, y, 'o', 'DisplayName', '观测数据');
 hold on;
-plot(x_interp, y_linear, '-', 'DisplayName', '线性插值', 'LineWidth', 1);
-plot(x_interp, y_spline, '--', 'DisplayName', '三次样条插值', 'LineWidth', 3);
+plot(x_interp, y_linear, '-', 'DisplayName', '线性插值');
 xlabel('x');
 ylabel('y');
-title('插值方法比较');
+title('线性插值');
+legend;
+grid on;
+hold off;
+
+subplot(1, 2, 2);
+plot(x, y, 'o', 'DisplayName', '观测数据');
+hold on;
+plot(x_interp, y_spline, '-', 'DisplayName', '三次样条插值');
+xlabel('x');
+ylabel('y');
+title('三次样条插值');
 legend;
 grid on;
 hold off;
