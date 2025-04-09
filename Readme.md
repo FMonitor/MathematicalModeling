@@ -228,13 +228,161 @@ $$
 
 <div align="center">
 
-| | 前舱 | 中仓 | 后舱 |
-| :---: | :---: | :---: | :---: |
-| 货物1 | 0 | 0 | 0 |
-| 货物2 | 10 | 0 | 5 |
-| 货物3 | 0 | 12.9474 | 3 |
-| 货物4 | 0 | 3.0526 | 0 |
+|       | 前舱  |  中仓   | 后舱  |
+| :---: | :---: | :-----: | :---: |
+| 货物1 |   0   |    0    |   0   |
+| 货物2 |  10   |    0    |   5   |
+| 货物3 |   0   | 12.9474 |   3   |
+| 货物4 |   0   | 3.0526  |   0   |
 
 </div>
 
 此时，飞机的最大利润为  $z = 121515.79$.
+
+## Task 3:
+### 整数规划问题
+1.试将下述非线性的 0-1 规划问题转换成线性的 0-1 规划问题。
+$$
+\begin{aligned}
+\max & \quad z = x_1+x_1x_2-x_3 \\
+s.t. & \quad -2x_1+3x_2+x_3 \leq 3 \\
+& \quad x_j=0 或 1, j=1,2,3 \\
+\end{aligned}
+$$
+
+由于 $x_1$ 和 $x_2$ 只能取 0 或 1，因此可以将 $x_1x_2$ 转换为 $x_4$，即 $x_4 = x_1x_2$。<br>然后可以将目标函数和约束条件转换为线性形式：
+$$
+
+\begin{aligned}
+\max & \quad z = x_1+x_4-x_3 \\
+s.t. & \quad -2x_1+3x_2+x_3 \leq 3 \\
+& \quad x_4 \leq x_1 \\
+& \quad x_4 \leq x_2 \\
+& \quad x_4 \geq x_1+x_2-1 \\
+& \quad x_j=0 或 1, j=1,2,3,4 \\
+\end{aligned}
+$$
+
+---
+
+2. 某公司新购置了某种设备6台，欲分配给下属的4个企业，已知各企业获得这种设备后年创利润如表3.1所示，单位为千万元。应如何分配这些设备才能使年创总利润最大?最大利润是多少?
+
+<div align="center">
+表3.1 各企业获得设备的年创利润数 <br>
+
+| 设备  |  甲   |  乙   |  丙   |  丁   |
+| :---: | :---: | :---: | :---: | :---: |
+|   1   |   4   |   2   |   3   |   4   |
+|   2   |   6   |   4   |   5   |   5   |
+|   3   |   7   |   6   |   7   |   6   |
+|   4   |   7   |   8   |   8   |   6   |
+|   5   |   7   |   9   |   8   |   6   |
+|   6   |   7   |  10   |   8   |   6   |
+
+</div>
+
+首先定义决策变量：
+
+$$
+
+x_{ij} = \begin{cases}
+1, & \text{第 } i \text{ 台设备分配给企业 } j \\
+0, & \text{否则}
+\end{cases}
+$$
+
+其中 $(i = 1,2,\dots,6), (j = 1,2,3,4)$ 分别对应 甲、乙、丙、丁，然后定义目标函数：<br>
+
+$$
+\max \sum_{i=1}^{6} \sum_{j=1}^{4} p_{ij} x_{ij}
+$$
+
+其中 $(p_{ij})$ 是表格中的利润。
+每台设备只能分配给一个企业的限制条件为：
+$$
+\sum_{j=1}^{4} x_{ij} = 1 \quad \text{对所有 } i = 1,\dots,6
+$$
+
+决策变量为0-1整数：
+
+$$
+[x_{ij} \in \{0,1\}]
+$$
+
+
+使用 MATLAB 的 `intlinprog` 函数解决这个 0-1 整数规划问题。
+
+
+
+```matlab
+clear; clc;
+
+% 设备利润矩阵 P(i,j)：第i台设备给第j个企业带来的利润（千万元）
+P = [4 2 3 4;
+     6 4 5 5;
+     7 6 7 6;
+     7 8 8 6;
+     7 9 8 6;
+     7 10 8 6];
+
+[m, n] = size(P); % m=6设备数，n=4企业数
+prob = optimproblem('ObjectiveSense', 'maximize');
+
+x = optimvar('x', m, n, 'Type', 'integer', 'LowerBound', 0, 'UpperBound', 1);
+
+profit_expr = sum(sum(P .* x)); % 元素对应相乘再求和
+prob.Objective = profit_expr;
+
+assign_constraints = sum(x, 2) == 1;
+
+prob.Constraints.assign = assign_constraints;
+
+[sol, fval, exitflag, output] = solve(prob);
+fprintf('最大利润为：%.2f 千万元\n', fval);
+firm_names = ["甲", "乙", "丙", "丁"];
+for i = 1:m
+    assigned = find(sol.x(i, :) > 0.5); % 找出该设备分配给哪个企业
+    fprintf('设备 %d 分配给企业 %s\n', i, firm_names(assigned));
+end
+```
+
+求解得最大利润为：44.00 千万元，设备 1, 2, 3 分配给企业 甲，设备 4, 5, 6 分配给企业 乙。
+
+---
+
+3.求解下列线性规划问题
+$$
+\begin{aligned}
+\max & \quad z = 20x_1+90x_2+80x_3+70x_4+30x_5 \\
+s.t. & \quad x_1+x_2+x_5 \geq 30 \\
+& \quad x_3+x_4\geq 30 \\
+& \quad 3x_1+2x_3\leq 120 \\
+& \quad 3x_2+2x_4+x_5\leq 48 \\
+& \quad x_j\geq 0且为整数, j=1,2,3,4,5 \\
+\end{aligned}
+$$
+
+```matlab
+clear; clc;
+
+x = optimvar('x', 5, 'Type', 'integer', 'LowerBound', 0);
+obj = -[20, 90, 80, 70, 30] * x;
+prob = optimproblem('Objective', obj, 'ObjectiveSense', 'min');
+
+cons = [
+    -x(1) - x(2) - x(5) <= -30;
+    -x(3) - x(4) <= -30;
+     3*x(1) + 2*x(3) <= 120;
+     3*x(2) + 2*x(4) + x(5) <= 48;
+];
+
+prob.Constraints.cons = cons;
+[sol, fval, exitflag, output] = solve(prob);
+
+disp("最优解为：")
+disp(sol.x)
+disp("最大目标函数值为：")
+disp(-fval)
+```
+
+求解得最优解为：$x_1=0, x_2=0, x_3=60, x_4=9, x_5=30$，最大目标函数值为：$z=6330$
